@@ -1,0 +1,316 @@
+library(car)
+library(MASS)
+library(MuMIn)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(visreg)
+library(emmeans)
+library(metafor)
+
+############## Does the strength of natural selection for larger bodies INCREASE at higher elevations?
+surv <- read.csv('surv.elev.csv')
+surv <- subset(surv, linear.coefs <3) # one massive outlier (B=3.80). remove it
+
+s.mod01 <- lmer(linear.coefs ~ elevation + abs.Lat + (1|StudyID) + (1|Species), data = surv)
+summary(s.mod01)
+# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+# Formula: linear.coefs ~ elevation + abs.Lat + (1 | StudyID) + (1 | Species)
+   # Data: surv
+
+# REML criterion at convergence: -496.7
+
+# Scaled residuals: 
+    # Min      1Q  Median      3Q     Max 
+# -8.5466 -0.3564 -0.0879  0.2686  8.8521 
+
+# Random effects:
+ # Groups   Name        Variance Std.Dev.
+ # StudyID  (Intercept) 0.003261 0.05711 
+ # Species  (Intercept) 0.004321 0.06573 
+ # Residual             0.034184 0.18489 
+# Number of obs: 1085, groups:  StudyID, 35; Species, 23
+
+# Fixed effects:
+              # Estimate Std. Error         df t value Pr(>|t|)  
+# (Intercept) -8.183e-02  6.717e-02  3.081e+01  -1.218   0.2324  
+# elevation    3.368e-06  3.722e-05  1.447e+02   0.090   0.9280  
+# abs.Lat      2.694e-03  1.417e-03  2.678e+01   1.901   0.0681 .
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# Correlation of Fixed Effects:
+          # (Intr) elevtn
+# elevation  0.035       
+# abs.Lat   -0.951 -0.150
+
+confint(s.mod01, parm = 'elevation')
+                  # 2.5 %       97.5 %
+# elevation -6.906787e-05 7.574371e-05
+
+#### do we need to account for any higher-level phylogenetic relatedness?
+s.mod01a <- lmer(linear.coefs ~ elevation + abs.Lat + (1|StudyID) + (1|Species) + (1|order) + (1|class), data = surv)
+AICc(s.mod01a,s.mod01)
+         # df      AICc
+# s.mod01a  8 -481.0529
+# s.mod01   6 -484.5820
+
+## nope
+
+
+
+
+###### formal meta-analysis
+proper.se <- proper[which(!is.na(proper$linear.coefs.se)),]
+dim(proper.se)
+
+
+meta01 <- rma.mv(linear.coefs ~ elevation + abs.Lat, random = list(~1|StudyID, ~1|Species),  V = (surv$linear.coefs.se)^2, data = surv)
+meta01$beta[2]
+#-0.0001368197
+meta01$se[2]
+#8.03162e-05
+
+meta01$ci.ub[2] # upper CI for elevation
+# 2.059711e-05
+meta01$ci.lb[2] # lower CI for elevation
+# -0.0002942366
+### CIs overlap 0
+
+
+### do we need to account for higher-level phylogenetic relatedness?
+meta01a <- rma.mv(linear.coefs ~ elevation + abs.Lat, random = list(~1|StudyID, ~1|Species, ~1|order, ~1|class),  V = (surv$linear.coefs.se)^2, data = surv)
+AICc(meta01a, meta01)
+        # df     AICc
+# meta01a  7 -94.9215
+# meta01   5 -99.0916
+
+### verts vs inverts
+s.mod02 <- lmer(linear.coefs ~ elevation + abs.Lat + Taxon.group + Taxon.group:elevation + (1|StudyID) + (1|Species), data = surv)
+summary(s.mod02)
+# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+# Formula: linear.coefs ~ elevation + abs.Lat + Taxon.group + Taxon.group:elevation +  
+    # (1 | StudyID) + (1 | Species)
+   # Data: surv
+
+# REML criterion at convergence: -483.7
+
+# Scaled residuals: 
+    # Min      1Q  Median      3Q     Max 
+# -8.5654 -0.3540 -0.0883  0.2666  8.8474 
+
+# Random effects:
+ # Groups   Name        Variance Std.Dev.
+ # StudyID  (Intercept) 0.003141 0.05604 
+ # Species  (Intercept) 0.004459 0.06678 
+ # Residual             0.034129 0.18474 
+# Number of obs: 1085, groups:  StudyID, 35; Species, 23
+
+# Fixed effects:
+                         # Estimate Std. Error         df t value Pr(>|t|)  
+# (Intercept)            -0.2434344  0.1073859 28.4949128  -2.267   0.0312 *
+# elevation               0.0009828  0.0006031 75.5527735   1.630   0.1073  
+# abs.Lat                 0.0031180  0.0014367 24.8787332   2.170   0.0397 *
+# Taxon.groupV            0.1520603  0.0800454 25.3153255   1.900   0.0689 .
+# elevation:Taxon.groupV -0.0009879  0.0006049 75.6388858  -1.633   0.1066  
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# Correlation of Fixed Effects:
+            # (Intr) elevtn abs.Lt Txn.gV
+# elevation   -0.558                     
+# abs.Lat     -0.707  0.112              
+# Taxon.gropV -0.777  0.659  0.149       
+# elvtn:Txn.V  0.563 -0.998 -0.122 -0.664
+
+confint(s.mod02, parm = 'elevation:Taxon.groupV')
+                              # 2.5 %       97.5 %
+# elevation:Taxon.groupV -0.002244728 0.0003308501
+
+## endos vs ectos
+s.mod03 <- lmer(linear.coefs ~ elevation + abs.Lat + Endo.Ecto + Endo.Ecto:elevation + (1|StudyID) + (1|Species), data = surv)
+summary(s.mod03)
+
+# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+# Formula: linear.coefs ~ elevation + abs.Lat + Endo.Ecto + Endo.Ecto:elevation +  
+    # (1 | StudyID) + (1 | Species)
+   # Data: surv
+
+# REML criterion at convergence: -479.6
+
+# Scaled residuals: 
+    # Min      1Q  Median      3Q     Max 
+# -8.5638 -0.3614 -0.0875  0.2747  8.8274 
+
+# Random effects:
+ # Groups   Name        Variance Std.Dev.
+ # StudyID  (Intercept) 0.003544 0.05954 
+ # Species  (Intercept) 0.003240 0.05692 
+ # Residual             0.034214 0.18497 
+# Number of obs: 1085, groups:  StudyID, 35; Species, 23
+
+# Fixed effects:
+                          # Estimate Std. Error         df t value Pr(>|t|)  
+# (Intercept)             -9.649e-02  6.561e-02  2.558e+01  -1.471   0.1536  
+# elevation               -5.288e-05  2.140e-04  2.359e+01  -0.247   0.8070  
+# abs.Lat                  2.444e-03  1.385e-03  2.146e+01   1.764   0.0919 .
+# Endo.EctoEndo            5.866e-02  4.396e-02  1.784e+01   1.334   0.1989  
+# elevation:Endo.EctoEndo  4.539e-05  2.167e-04  2.494e+01   0.209   0.8358  
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# Correlation of Fixed Effects:
+            # (Intr) elevtn abs.Lt End.EE
+# elevation   -0.123                     
+# abs.Lat     -0.866 -0.201              
+# Endo.EctEnd -0.198  0.484 -0.203       
+# elvtn:En.EE  0.133 -0.985  0.185 -0.519
+
+confint(s.mod03, parm = 'elevation:Endo.EctoEndo')
+                                # 2.5 %       97.5 %
+# elevation:Endo.EctoEndo -0.0003524787 0.0004501001
+
+############## Does the strength of sexual selection for larger bodies DECREASE at higher elevations?
+ssd <- read.csv('elevation.ss.csv')
+
+
+inf01 <-  lmer(linear.coefs ~ elevation + abs.Lat + (1|StudyID) + (1|Species), data = ssd)
+summary(inf01)
+# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+# Formula: linear.coefs ~ elevation + abs.Lat + (1 | StudyID) + (1 | Species)
+   # Data: ssd
+
+# REML criterion at convergence: 123.9
+
+# Scaled residuals: 
+    # Min      1Q  Median      3Q     Max 
+# -2.4853 -0.5622 -0.1896  0.4424  3.7070 
+
+# Random effects:
+ # Groups   Name        Variance Std.Dev.
+ # StudyID  (Intercept) 0.009737 0.09868 
+ # Species  (Intercept) 0.012824 0.11325 
+ # Residual             0.087014 0.29498 
+# Number of obs: 184, groups:  StudyID, 25; Species, 19
+
+# Fixed effects:
+              # Estimate Std. Error         df t value Pr(>|t|)   
+# (Intercept)  5.975e-01  2.151e-01  3.155e+01   2.777  0.00915 **
+# elevation   -1.260e-04  5.771e-05  1.329e+02  -2.183  0.03079 * 
+# abs.Lat     -7.146e-03  4.447e-03  2.668e+01  -1.607  0.11986   
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# Correlation of Fixed Effects:
+          # (Intr) elevtn
+# elevation -0.258       
+# abs.Lat   -0.975  0.168
+
+confint(inf01, parm = 'elevation')
+                  # 2.5 %        97.5 %
+# elevation -0.0002415919 -9.176224e-06
+
+
+### in informal meta-analytical model across 184 estimates from 19 species, sexual selection for larger bodies declines towards higher elevations
+
+
+### test if we need to account for higher-level phylogenetic relatedness in informal analysis
+inf01a <- lmer(linear.coefs ~ elevation + abs.Lat + (1|StudyID) + (1|Species), data = ssd)
+inf01b <- lmer(linear.coefs ~ elevation + abs.Lat + (1|StudyID) + (1|Species) + (1|Order) + (1|Class), data = ssd)
+AICc(inf01a, inf01b)
+
+
+## nope
+
+
+### is there any evidence for non-linearity?
+inf01b <-  lmer(linear.coefs ~ elevation + abs.Lat + I(elevation^2) + (1|StudyID) + (1|Species), data = ssd)
+summary(inf01b)
+# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+# Formula: linear.coefs ~ elevation + abs.Lat + I(elevation^2) + (1 | StudyID) +      (1 | Species)
+   # Data: ssd
+
+# REML criterion at convergence: 154.5
+
+# Scaled residuals: 
+    # Min      1Q  Median      3Q     Max 
+# -2.4875 -0.5602 -0.1885  0.4362  3.6974 
+
+# Random effects:
+ # Groups   Name        Variance Std.Dev.
+ # StudyID  (Intercept) 0.01013  0.1007  
+ # Species  (Intercept) 0.01283  0.1132  
+ # Residual             0.08740  0.2956  
+# Number of obs: 184, groups:  StudyID, 25; Species, 19
+
+# Fixed effects:
+                 # Estimate Std. Error         df t value Pr(>|t|)  
+# (Intercept)     5.934e-01  2.339e-01  3.398e+01   2.537   0.0159 *
+# elevation      -1.189e-04  1.908e-04  7.243e+01  -0.623   0.5350  
+# abs.Lat        -7.087e-03  4.634e-03  2.783e+01  -1.529   0.1374  
+# I(elevation^2) -3.720e-09  9.042e-08  1.029e+02  -0.041   0.9673  
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# Correlation of Fixed Effects:
+            # (Intr) elevtn abs.Lt
+# elevation   -0.435              
+# abs.Lat     -0.970  0.300       
+# I(elevtn^2)  0.381 -0.953 -0.264
+
+confint(inf01b, parm = 'I(elevation^2)')
+                       # 2.5 %       97.5 %
+# I(elevation^2) -1.989711e-07 1.730597e-07
+
+### formal meta-analysis. Much smaller dataset because many estimates do not have standard errors
+form01 <- rma.mv(linear.coefs ~ elevation + abs.Lat, random = list(~1|StudyID, ~1|Species),  V = (ssd$ses)^2, data = ssd)
+
+form01$beta[2]
+#-0.0002321817
+form01$se[2]
+#0.0001162154
+
+form01$ci.ub[2] # upper CI for elevation
+# -4.403672e-06
+form01$ci.lb[2] # lower CI for elevation
+# -0.0004599597
+
+### in formal meta-analysis on the smaller dataset for which SE were available, sexual selection favors large bodies at low elevations but not at high elevations
+
+
+#### test if we need to account for higher level phylogenetic relatedness in formal meta-analysis
+form01a <- rma.mv(linear.coefs ~ elevation + abs.Lat, random = list(~1|StudyID, ~1|Species),  V = (ssd$ses)^2, data = ssd)
+form01b <- rma.mv(linear.coefs ~ elevation + abs.Lat, random = list(~1|StudyID, ~1|Species, ~1|Order, ~1|Class),  V = (ssd$ses)^2, data = ssd)
+AICc(form01a, form01b)
+
+## we do not
+
+### given extremely small sample size for formal analysis, did not test for non-linearity
+
+
+## comparison of endo- vs ectotherm
+inf02 <-  lmer(linear.coefs ~ elevation + abs.Lat + Endo.Ecto + Endo.Ecto:elevation + (1|StudyID) + (1|Species), data = ssd)
+confint(inf02) # no difference between endotherms and ectotherms
+                                # 2.5 %       97.5 %
+# .sig01                   0.0000000000 2.228445e-01
+# .sig02                   0.0000000000 2.216151e-01
+# .sigma                   0.2638053702 3.290295e-01
+# (Intercept)              0.1774026345 1.059408e+00
+# elevation               -0.0002879597 1.707266e-05
+# abs.Lat                 -0.0166206820 1.507475e-03
+# Endo.EctoEndo           -0.4345286556 3.321290e-01
+# elevation:Endo.EctoEndo -0.0002948415 3.914191e-04
+
+## comparison between vertebrates and invertebrates
+inf03 <- lmer(linear.coefs ~ elevation + abs.Lat + Taxon.group + Taxon.group:elevation + (1|StudyID) + (1|Species), data = ssd)
+confint(inf03) # no difference between verts and inverts
+
+                               # 2.5 %        97.5 %
+# .sig01                  0.0000000000  2.240525e-01
+# .sig02                  0.0000000000  2.261355e-01
+# .sigma                  0.2630573962  3.277208e-01
+# (Intercept)             0.1695883546  1.121822e+00
+# elevation              -0.0003111008 -3.616189e-06
+# abs.Lat                -0.0163873363  1.620236e-03
+# Taxon.groupV           -0.2944242804  1.266284e-01
+# elevation:Taxon.groupV -0.0001536527  3.507418e-04
