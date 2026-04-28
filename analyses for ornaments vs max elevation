@@ -1,0 +1,58 @@
+library(car)
+library(phytools)
+library(nlme)
+library(visreg)
+
+### load data and tree
+max <- read.csv('CO.species.orn.csv')
+co.drags <- read.tree('CO.species.orn.phylo.tre')
+
+# make sure the rownames in the file are the species names
+rownames(max) <- max$binom
+
+
+###fit model set to see what model of shared evolutionary history is best
+mod00a <- gls(logit.orn ~ max, data = max, correlation = corPagel(value = 1, form=~binom, phy = co.drags, fixed = TRUE))
+mod00b <- gls(logit.orn ~ max, data = max, correlation = corPagel(value = 1, form=~binom, phy = co.drags, fixed = FALSE))
+mod00c <- gls(logit.orn ~ max, data = max, correlation = corPagel(value = 0.5, form=~binom, phy = co.drags, fixed = FALSE))
+mod00d <- gls(logit.orn ~ max, data = max, correlation = corPagel(value = 0, form=~binom, phy = co.drags, fixed = TRUE))
+AICc(mod00a, mod00b, mod00c, mod00d) # pagel's lambda is best
+       # df     AICc
+# mod00a  3 184.3119
+# mod00b  4 169.7497
+# mod00c  4 169.7497
+# mod00d  3 186.1654
+
+summary(mod00b) # model output
+# Generalized least squares fit by REML
+  # Model: logit.orn ~ new.max 
+  # Data: max 
+       # AIC      BIC   logLik
+  # 168.6068 175.1571 -80.3034
+
+# Correlation Structure: corPagel
+ # Formula: ~binom 
+ # Parameter estimate(s):
+   # lambda 
+# 0.9714801 
+
+# Coefficients:
+                 # Value Std.Error    t-value p-value
+# (Intercept) -1.3262290 2.8547609 -0.4645675  0.6449
+# 	max       -0.0008737 0.0003349 -2.6088590  0.0129
+
+ # Correlation: 
+        # (Intr)
+# new.max -0.297
+
+# Standardized residuals:
+       # Min         Q1        Med         Q3        Max 
+# -0.4391542 -0.1062833  0.1511627  0.4312779  1.5687775 
+
+# Residual standard error: 4.727955 
+# Degrees of freedom: 40 total; 38 residual
+
+confint(mod00b) # confidence intervals
+                   # 2.5 %        97.5 %
+# (Intercept) -6.921457552  4.2689995408
+# 	max     -0.001530073 -0.0002173112
