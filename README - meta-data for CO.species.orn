@@ -1,0 +1,12 @@
+#Manuscript Title: Hypoxia extinguishes the competition for mates at high elevations
+#Year: 2025
+ 
+#File Name: CO.species.orn.csv
+#Description: upper elevational limit (m asl) and proportion of ornamented wing area for dragonfly species in Colorado. Associated also with the species-level phylogeny "CO.species.orn.phylo.tre"
+#Rows: 40, excluding the header. Each row corresponds to a species
+#Columns: 4. binom, max, prob.orn, logit.orn
+
+#binom. Binomial nomenclature for species
+#max. Highest known elevation of species in state of Colorado, USA
+#prob.orn. Proportion of ornamented wing area for species (from Hersch & Moore, 2023 Biol J Linn Soc)
+#logit.orn. Logit-transformation of prob.orn. 0s and 1s were adjusted by 0.1
