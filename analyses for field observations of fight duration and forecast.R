@@ -577,3 +577,115 @@ confint(site.mod01)
 # log(elev)   -3.06256575 -3.0517276
 # log(temp)   -1.05821838 -1.0405450
 
+
+### very conservative analysis to minimize any whiff of pseudorep. 
+site.mod02 <- lmer(log(duration) ~ log(elev) + log(temp) + (1|spp) + (1|locat) + (1|date) + (1|genus) + (1|family), data = subset(sp.site.dat, N >= 15), , control = lmerControl(optimizer = 'bobyqa'))
+summary(site.mod02)
+
+# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+# Formula: log(duration) ~ log(elev) + log(temp) + (1 | spp) + (1 | locat) +  
+    # (1 | date) + (1 | genus) + (1 | family)
+   # Data: subset(sp.site.dat, N >= 15)
+# Control: lmerControl(optimizer = "bobyqa")
+
+# REML criterion at convergence: 4.5
+
+# Scaled residuals: 
+     # Min       1Q   Median       3Q      Max 
+# -1.15078 -0.43673 -0.08858  0.33494  1.10200 
+
+# Random effects:
+ # Groups   Name        Variance Std.Dev.
+ # date     (Intercept) 0.03122  0.1767  
+ # locat    (Intercept) 0.01915  0.1384  
+ # spp      (Intercept) 0.00000  0.0000  
+ # genus    (Intercept) 0.00000  0.0000  
+ # family   (Intercept) 0.00000  0.0000  
+ # Residual             0.02671  0.1634  
+# Number of obs: 25, groups:  date, 17; locat, 14; spp, 11; genus, 8; family, 3
+
+# Fixed effects:
+            # Estimate Std. Error      df t value Pr(>|t|)    
+# (Intercept)  25.1477     4.1962 20.1511   5.993 7.13e-06 ***
+# log(elev)    -2.6820     0.3921 18.3383  -6.840 1.91e-06 ***
+# log(temp)    -0.8756     0.4553 19.6555  -1.923   0.0691 .  
+
+site.mod03 <- lmer(log(duration) ~ log(elev) + log(temp) + (1|spp) + (1|locat) + (1|date) + (1|genus) + (1|family), data = subset(sp.site.dat, N >= 20), , control = lmerControl(optimizer = 'bobyqa'))
+summary(site.mod03)
+
+# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+# Formula: log(duration) ~ log(elev) + log(temp) + (1 | spp) + (1 | locat) +  
+    # (1 | date) + (1 | genus) + (1 | family)
+   # Data: subset(sp.site.dat, N >= 20)
+# Control: lmerControl(optimizer = "bobyqa")
+
+# REML criterion at convergence: 3.5
+
+# Scaled residuals: 
+     # Min       1Q   Median       3Q      Max 
+# -0.81730 -0.24354  0.04334  0.29539  0.82264 
+
+# Random effects:
+ # Groups   Name        Variance  Std.Dev. 
+ # date     (Intercept) 3.116e-02 1.765e-01
+ # locat    (Intercept) 3.982e-02 1.996e-01
+ # spp      (Intercept) 4.192e-03 6.475e-02
+ # genus    (Intercept) 0.000e+00 0.000e+00
+ # family   (Intercept) 3.249e-15 5.700e-08
+ # Residual             1.109e-02 1.053e-01
+# Number of obs: 21, groups:  date, 17; locat, 12; spp, 10; genus, 8; family, 3
+
+# Fixed effects:
+            # Estimate Std. Error      df t value Pr(>|t|)    
+# (Intercept)  26.4149     4.3410 15.8213   6.085 1.66e-05 ***
+# log(elev)    -2.8101     0.4281 14.6979  -6.564 9.92e-06 ***
+# log(temp)    -0.9669     0.4437 10.7213  -2.179   0.0526 .  
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# Correlation of Fixed Effects:
+          # (Intr) lg(lv)
+# log(elev) -0.966       
+# log(temp) -0.795  0.610
+# optimizer (bobyqa) convergence code: 0 (OK)
+# boundary (singular) fit: see help('isSingular')
+
+site.mod04 <- lmer(log(duration) ~ log(elev) + log(temp) + (1|spp) + (1|locat) + (1|date) + (1|genus) + (1|family), data = subset(sp.site.dat, N >= 25), , control = lmerControl(optimizer = 'bobyqa'))
+summary(site.mod04)
+
+# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+# Formula: log(duration) ~ log(elev) + log(temp) + (1 | spp) + (1 | locat) +  
+    # (1 | date) + (1 | genus) + (1 | family)
+   # Data: subset(sp.site.dat, N >= 25)
+# Control: lmerControl(optimizer = "bobyqa")
+
+# REML criterion at convergence: 1.5
+
+# Scaled residuals: 
+     # Min       1Q   Median       3Q      Max 
+# -1.05253 -0.35482  0.05864  0.29208  1.12568 
+
+# Random effects:
+ # Groups   Name        Variance Std.Dev.
+ # date     (Intercept) 0.01937  0.1392  
+ # locat    (Intercept) 0.03525  0.1878  
+ # spp      (Intercept) 0.00000  0.0000  
+ # genus    (Intercept) 0.00000  0.0000  
+ # family   (Intercept) 0.00000  0.0000  
+ # Residual             0.01821  0.1349  
+# Number of obs: 19, groups:  date, 15; locat, 12; spp, 9; genus, 7; family, 3
+
+# Fixed effects:
+            # Estimate Std. Error      df t value Pr(>|t|)    
+# (Intercept)  24.5969     4.0752 13.4843   6.036 3.59e-05 ***
+# log(elev)    -2.6013     0.4035 12.7428  -6.446 2.39e-05 ***
+# log(temp)    -0.8987     0.4183 11.2782  -2.148   0.0542 .  
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# Correlation of Fixed Effects:
+          # (Intr) lg(lv)
+# log(elev) -0.964       
+# log(temp) -0.785  0.594
+# optimizer (bobyqa) convergence code: 0 (OK)
+# boundary (singular) fit: see help('isSingular')
